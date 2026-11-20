@@ -67,3 +67,8 @@ The final daily outputs are :
 - **GLSK quality check (F117) :** same as RefProg (one file)
 - **Merging Response (F121) :** makes a link between the merging request and the provided outputs
 - **Merging report :** a summary of the merging process in spreadsheet form
+
+## Restarts and execution logs
+The tasks and their execution logs are kept in the H2 database, across restarts of the server. At every start, before the server accepts requests:
+- the tasks a restart interrupted (still `RUNNING`) are set to `ERROR`, with the status detail "Interrupted by a restart of the server"
+- the execution log records older than `ce-merging-server.logs.retention-days` (default: 30, `0` keeps them all) are removed

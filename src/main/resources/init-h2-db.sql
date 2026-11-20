@@ -1,8 +1,9 @@
-DROP TABLE logging_event_exception IF EXISTS;
-DROP TABLE logging_event_property IF EXISTS;
-DROP TABLE logging_event IF EXISTS;
+-- Runs on every new database connection (H2 INIT), possibly in the middle
+-- of a run when the connection pool opens a new connection: only create
+-- what is missing, so the execution logs are kept. Old log records are
+-- removed at start (see StartupCleanup).
 
-CREATE TABLE logging_event (
+CREATE TABLE IF NOT EXISTS logging_event (
   timestmp BIGINT NOT NULL,
   formatted_message LONGVARCHAR NOT NULL,
   logger_name VARCHAR(256) NOT NULL,
@@ -19,16 +20,19 @@ CREATE TABLE logging_event (
   caller_line CHAR(4),
   event_id IDENTITY NOT NULL);
 
-CREATE TABLE logging_event_property (
+CREATE TABLE IF NOT EXISTS logging_event_property (
   event_id BIGINT NOT NULL,
   mapped_key  VARCHAR(254) NOT NULL,
   mapped_value LONGVARCHAR,
   PRIMARY KEY(event_id, mapped_key),
   FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
 
-CREATE TABLE logging_event_exception (
+CREATE TABLE IF NOT EXISTS logging_event_exception (
   event_id BIGINT NOT NULL,
   i SMALLINT NOT NULL,
   trace_line VARCHAR(256) NOT NULL,
   PRIMARY KEY(event_id, i),
   FOREIGN KEY (event_id) REFERENCES logging_event(event_id));
+
+-- For the removal of old log records at start
+CREATE INDEX IF NOT EXISTS logging_event_timestmp ON logging_event(timestmp);
