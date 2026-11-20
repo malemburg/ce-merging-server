@@ -11,9 +11,23 @@
         </connectionSource>
     </appender>
 
+    <!-- The same database, warnings and errors only -->
+    <appender name="db-warn" class="ch.qos.logback.classic.db.DBAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">
+            <driverClass>org.h2.Driver</driverClass>
+            <url>jdbc:h2:file:${HOME}/ce-merging/database</url>
+            <user>ce</user>
+            <password>ce</password>
+        </connectionSource>
+    </appender>
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <!-- With date and UTC offset, so the hour repeated in autumn can be told apart -->
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -22,13 +36,39 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="org.springframework" level="OFF"/>
-    <logger name="org.apache" level="OFF"/>
+    <!--
+        Framework errors (failed requests, start failures) go to the console
+        only. They stay out of the database, since every record there carrying
+        a task ID is served as that task's execution log, and a reused request
+        thread may still carry the task ID of an earlier request.
+    -->
+    <logger name="org.springframework" level="ERROR" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="org.apache" level="ERROR" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="org.hibernate" level="ERROR" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="com.zaxxer" level="ERROR" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!--
+        OpenLoadFlow writes thousands of INFO records per run, from threads
+        without a task ID, so they never show in an execution log, but each
+        costs a synchronous database insert: only warnings and errors go to
+        the database.
+    -->
+    <logger name="com.powsybl.openloadflow" additivity="false">
+        <appender-ref ref="db-warn"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="com.netflix" level="OFF"/>
-    <logger name="org.hibernate" level="OFF"/>
     <logger name="io.swagger" level="OFF"/>
     <logger name="springdoc" level="OFF"/>
-    <logger name="com.zaxxer" level="OFF"/>
 
     <logger name="com.powsybl.computation" level="OFF"/>
     <logger name="com.powsybl.commons.config" level="OFF"/>
