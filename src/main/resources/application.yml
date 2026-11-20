@@ -63,3 +63,6 @@ ce-merging-server:
   filesystem:
     root: ${HOME}/ce-merging-server/filesystem
     root-daily: ${HOME}/ce-merging-server/filesystem-daily-merging
+  logs:
+    # Execution log records older than this are removed at start; 0 keeps them all
+    retention-days: 30

@@ -7,8 +7,10 @@
 package com.farao_community.farao.ce_merging.merging.post_process.merging_supervisor_logs;
 
 import com.farao_community.farao.ce_merging.merging.post_process.merging_supervisor_logs.entity.LoggingEvent;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Set;
@@ -20,4 +22,24 @@ public interface LoggingEventRepository extends CrudRepository<LoggingEvent, Lon
            "where lp.mappedKey = 'taskId' and lp.mappedValue = ?1 and lp.loggingEvent = l " +
            "and lp2.loggingEvent = l and lp2.mappedKey = 'merging-step' ")
     Set<LoggingEvent> findLogsByTaskId(Long taskId);
+
+    /**
+     * The three deletions remove the log records written before the given time,
+     * in the order the foreign keys require: properties and exceptions first.
+     *
+     * @param cutoff : milliseconds since the epoch, as in the timestmp column
+     */
+    @Modifying
+    @Query("delete from LoggingEventProperty lp where lp.loggingEvent in " +
+           "(select l from LoggingEvent l where l.timestmp < :cutoff)")
+    int deletePropertiesOfLogsBefore(@Param("cutoff") long cutoff);
+
+    @Modifying
+    @Query("delete from LoggingEventException le where le.loggingEvent in " +
+           "(select l from LoggingEvent l where l.timestmp < :cutoff)")
+    int deleteExceptionsOfLogsBefore(@Param("cutoff") long cutoff);
+
+    @Modifying
+    @Query("delete from LoggingEvent l where l.timestmp < :cutoff")
+    int deleteLogsBefore(@Param("cutoff") long cutoff);
 }
