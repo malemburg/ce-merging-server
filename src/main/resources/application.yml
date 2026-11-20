@@ -12,7 +12,9 @@ spring:
     password: ce
   h2:
     console:
-      enabled: true
+      # The console gives full access to the database: switch it on where needed
+      # only, e.g. with SPRING_H2_CONSOLE_ENABLED=true
+      enabled: false
       path: /h2
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
